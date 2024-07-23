@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>번개 피하기 게임</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+        #game-area {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+        .target {
+            width: 50px;
+            height: 50px;
+            background-color: teal;
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            transition: 0.2s;
+        }
+        .lightning {
+            width: 30px;
+            height: 60px;
+            position: absolute;
+            top: -60px;
+        }
+        .lightning img {
+            width: 100%;
+            height: 100%;
+        }
+        #score {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 20px;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="game-area">
+        <div class="target"></div>
+        <div id="score">점수: 0</div>
+    </div>
+
+    <script>
+        const gameArea = document.getElementById('game-area');
+        let target = document.querySelector('.target');
+        let scoreElement = document.getElementById('score');
+        let pos = 0;
+        let gameStartTime;
+        let gameInterval;
+        let score = 0;
+
+        function move(event) {
+            const keyName = event.key;
+            const targetPos = target.getBoundingClientRect();
+
+            if (keyName === 'ArrowRight' && targetPos.right + 10 < window.innerWidth) {
+                pos += 15;
+                target.style.transform = `translateX(calc(-50% + ${pos}px))`;
+            }
+
+            if (keyName === 'ArrowLeft' && targetPos.left > 10) {
+                pos -= 15;
+                target.style.transform = `translateX(calc(-50% + ${pos}px))`;
+            }
+        }
+
+        function createLightning() {
+            const lightning = document.createElement('div');
+            lightning.classList.add('lightning');
+            lightning.style.left = `${Math.random() * (window.innerWidth - 30)}px`;
+            
+            const img = document.createElement('img');
+            img.src = 'lightning.jpg';
+            lightning.appendChild(img);
+            
+            gameArea.appendChild(lightning);
+
+            const fallInterval = setInterval(() => {
+                const lightningPos = lightning.getBoundingClientRect();
+                lightning.style.top = `${lightningPos.top + 5}px`;
+
+                if (checkCollision(lightning, target)) {
+                    endGame();
+                }
+
+                if (lightningPos.bottom > window.innerHeight) {
+                    clearInterval(fallInterval);
+                    lightning.remove();
+                    updateScore(1);
+                }
+            }, 50);
+        }
+
+        function checkCollision(elem1, elem2) {
+            const rect1 = elem1.getBoundingClientRect();
+            const rect2 = elem2.getBoundingClientRect();
+            return !(rect1.right < rect2.left || 
+                     rect1.left > rect2.right || 
+                     rect1.bottom < rect2.top || 
+                     rect1.top > rect2.bottom);
+        }
+
+        function endGame() {
+            clearInterval(gameInterval);
+            const survivedTime = (Date.now() - gameStartTime) / 1000;
+            alert(`게임 종료! 생존 시간: ${survivedTime.toFixed(2)}초\n최종 점수: ${score}`);
+            if (confirm("다시 시작하시겠습니까?")) {
+                startGame();
+            }
+        }
+
+        function updateScore(points) {
+            score += points;
+            scoreElement.textContent = `점수: ${score}`;
+        }
+
+        function startGame() {
+            // 게임 초기화
+            clearInterval(gameInterval);
+            gameArea.innerHTML = '<div class="target"></div><div id="score">점수: 0</div>';
+            target = document.querySelector('.target');
+            scoreElement = document.getElementById('score');
+            pos = 0;
+            score = 0;
+            updateScore(0);
+            
+            // 게임 시작
+            gameStartTime = Date.now();
+            gameInterval = setInterval(createLightning, 1000);
+        }
+
+        document.addEventListener('keydown', move);
+        startGame();
+    </script>
+</body>
+
+</html>
